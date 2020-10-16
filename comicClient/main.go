@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -22,16 +23,37 @@ type Comic struct {
 	Transcript string `json:"transcript"`
 }
 
+var comicTemplate = `
+<table>
+<tr>
+	<td>#</td><td>Month/Year</td><td>Title</td><td>Transcript</td>
+</tr>
+{{range .}}
+	<tr>
+		<td>{{.Num}}</td><td>{{.Month}}-{{.Year}}</td><td>{{.Title}}</td><td>{{.Transcript}}</td>
+	</tr>
+{{end}}
+</table>
+`
+var report = template.Must(template.New("comics").Parse(comicTemplate))
+
 func main() {
+	buildFromTemplate()
 	buildIndex()
 	term := os.Args[1]
-	fmt.Println(term)
 	m, ok := index[term]
 	if !ok {
-		fmt.Printf("term: %s nor found\n", term)
+		fmt.Printf("term: %s not found\n", term)
 	} else {
 		fmt.Println("term found in following chapters", m)
 	}
+}
+
+func buildFromTemplate() {
+	comics := fetchComics()
+	f, err := os.Create("out.html")
+	check(err)
+	report.Execute(f, comics)
 }
 
 func buildIndex() {
@@ -75,6 +97,16 @@ func fetchComic(url string) Comic {
 	var comic Comic
 	json.Unmarshal(data, &comic)
 	return comic
+}
+
+func fetchComics() []Comic {
+	resp, err := http.Get("http://localhost:8080/comics")
+	check(err)
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	var comics []Comic
+	json.Unmarshal(data, &comics)
+	return comics
 }
 
 func check(e error) {

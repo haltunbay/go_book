@@ -21,7 +21,9 @@ type Comic struct {
 var comics []Comic
 
 func main() {
+	http.HandleFunc("/comics", handlerAll)
 	http.HandleFunc("/", handler)
+
 	loadComics()
 	//fmt.Printf("%+v", comics)
 	log.Fatal(http.ListenAndServe("localhost:8080", nil))
@@ -34,6 +36,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	json, err := json.MarshalIndent(comics[index-1], "", " ")
 	check(err)
 
+	fmt.Fprint(w, string(json))
+}
+
+func handlerAll(w http.ResponseWriter, r *http.Request) {
+	json, err := json.MarshalIndent(comics, "", " ")
+	check(err)
 	fmt.Fprint(w, string(json))
 }
 
