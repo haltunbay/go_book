@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"strings"
 )
 
-var comics []Comic
+var index = map[string]map[int]bool{}
 
 const ComicUrl = "http://localhost:8080/%d/info.0.json"
 
@@ -22,6 +24,14 @@ type Comic struct {
 
 func main() {
 	buildIndex()
+	term := os.Args[1]
+	fmt.Println(term)
+	m, ok := index[term]
+	if !ok {
+		fmt.Printf("term: %s nor found\n", term)
+	} else {
+		fmt.Println("term found in following chapters", m)
+	}
 }
 
 func buildIndex() {
@@ -30,13 +40,31 @@ func buildIndex() {
 		//fmt.Println("fetching url", url)
 
 		c := fetchComic(url)
-		fmt.Println(c.Transcript)
-		for _, t, err := bufio.ScanWords([]byte(c.Transcript)) {
-			if err != nil{
-				fmt.Errorf("Error scanwords %s", err)
+		//fmt.Println(c.Transcript)
+		scanner := bufio.NewScanner(strings.NewReader(c.Transcript))
+		scanner.Split(bufio.ScanWords)
+		for scanner.Scan() {
+			w := cleanup(scanner.Text())
+
+			if index[w] == nil {
+				index[w] = map[int]bool{}
 			}
+			wordmap := index[w]
+
+			wordmap[i] = true
 		}
 	}
+	//data, _ := json.MarshalIndent(index, "", " ")
+	//fmt.Printf("%+s \n", string(data))
+
+}
+
+func cleanup(s string) string {
+	list := []string{"[[", "]]", "{{", "}}"}
+	for _, sp := range list {
+		s = strings.Trim(s, sp)
+	}
+	return s
 }
 
 func fetchComic(url string) Comic {

@@ -30,7 +30,6 @@ func main() {
 func handler(w http.ResponseWriter, r *http.Request) {
 	path := strings.Split(r.URL.Path, "/")
 	ci := path[1]
-	//j := path[1]
 	index, _ := strconv.Atoi(ci)
 	json, err := json.MarshalIndent(comics[index-1], "", " ")
 	check(err)
@@ -39,7 +38,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loadComics() {
-	file, err := ioutil.ReadFile("/home/haltunbay/code/sandbox/go_book/xkcdServer/data.json")
+	file, err := ioutil.ReadFile("data.json")
 	check(err)
 	json.Unmarshal(file, &comics)
 	//fmt.Printf("%+v", comics)
